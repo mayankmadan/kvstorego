@@ -1,6 +1,20 @@
 package server
 
+import (
+	"io"
+	"kvstore/cmd"
+)
+
 type Protocol interface {
-	ParseRequest(data string) (*Request, error)
-	PrepareResponse(res *Response) string
+	RequestParser
+	ResponseProcessor
+	GetName() string
+}
+
+type RequestParser interface {
+	ParseRequest(reader io.Reader) (*Request, error)
+}
+
+type ResponseProcessor interface {
+	PrepareResponseFromResult(res *cmd.Result) string
 }

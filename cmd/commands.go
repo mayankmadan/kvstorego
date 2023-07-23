@@ -10,7 +10,7 @@ type ICommand interface {
 	GetName() string
 	GetDescription() string
 	GetNumberOfOperands() int
-	Exec(operands []string) (string, bool, error) // true in case connection needs to be closed
+	Exec(operands []string) *Result // true in case connection needs to be closed
 	Init(name string, operandCount int, description string)
 }
 
@@ -36,10 +36,6 @@ func (c *Command) GetNumberOfOperands() int {
 
 func (c *Command) GetDescription() string {
 	return c.description
-}
-
-func (c *Command) Parse(operands []string) bool {
-	return true
 }
 
 func GetCommand(name string) ICommand {

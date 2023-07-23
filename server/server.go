@@ -1,9 +1,8 @@
 package server
 
 import (
-	"bufio"
 	"fmt"
-	"io"
+	"kvstore/cmd"
 	"net"
 )
 
@@ -31,29 +30,20 @@ func (srv Server) Start() {
 func handleConnection(conn net.Conn, proto Protocol) {
 	defer conn.Close()
 	for {
-		reader := bufio.NewReader(conn)
-		line, _, err := reader.ReadLine()
+		request, err := proto.ParseRequest(conn)
 		if err != nil {
-			if err == io.EOF {
-				fmt.Println("Connection Closing")
-			} else {
-				fmt.Printf("Error Reading: %s\n", err)
-			}
+			result := &cmd.Result{Data: nil, Err: err}
+			conn.Write([]byte(proto.PrepareResponseFromResult(result)))
+			continue
+		}
+		if request == nil {
 			break
 		}
 
-		request, err := proto.ParseRequest(string(line))
-		if err != nil {
-			response := &Response{Data: "", Err: err}
-			conn.Write([]byte(proto.PrepareResponse(response) + "\r\n"))
-			continue
-		}
-
-		resp, close, error := request.Command.Exec(request.Operands)
-		response := &Response{Data: resp, Err: error}
-		out := proto.PrepareResponse(response)
-		conn.Write([]byte(out + "\r\n"))
-		if close {
+		result := request.Command.Exec(request.Operands)
+		out := proto.PrepareResponseFromResult(result)
+		conn.Write([]byte(out))
+		if result.Close {
 			break
 		}
 
